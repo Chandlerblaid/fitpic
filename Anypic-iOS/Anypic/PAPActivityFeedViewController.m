@@ -127,7 +127,7 @@
 }
 
 #pragma mark - PFQueryTableViewController
-
+#pragma GCC diagnostic ignored "-Wundeclared-selector"
 - (PFQuery *)queryForTable {
     
     if (![PFUser currentUser]) {

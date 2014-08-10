@@ -142,7 +142,7 @@ static const CGFloat kPAPCellInsetWidth = 20.0f;
 
 
 #pragma mark - PFQueryTableViewController
-
+#pragma GCC diagnostic ignored "-Wundeclared-selector"
 - (PFQuery *)queryForTable {
     PFQuery *query = [PFQuery queryWithClassName:self.parseClassName];
     [query whereKey:kPAPActivityPhotoKey equalTo:self.photo];
