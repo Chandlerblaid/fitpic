@@ -3,7 +3,6 @@
 //  Anypic
 //
 //  Created by Mattieu Gamache-Asselin on 5/18/12.
-//  Copyright (c) 2013 Parse. All rights reserved.
 //
 
 #import "PAPUtility.h"
@@ -37,7 +36,6 @@
         
         PFACL *likeACL = [PFACL ACLWithUser:[PFUser currentUser]];
         [likeACL setPublicReadAccess:YES];
-        [likeACL setWriteAccess:YES forUser:[photo objectForKey:kPAPPhotoUserKey]];
         likeActivity.ACL = likeACL;
 
         [likeActivity saveInBackgroundWithBlock:^(BOOL succeeded, NSError *error) {
@@ -45,6 +43,23 @@
                 completionBlock(succeeded,error);
             }
 
+            if (succeeded && ![[[photo objectForKey:kPAPPhotoUserKey] objectId] isEqualToString:[[PFUser currentUser] objectId]]) {
+                NSString *privateChannelName = [[photo objectForKey:kPAPPhotoUserKey] objectForKey:kPAPUserPrivateChannelKey];
+                if (privateChannelName && privateChannelName.length != 0) {
+                    NSDictionary *data = [NSDictionary dictionaryWithObjectsAndKeys:
+                                          [NSString stringWithFormat:@"%@ likes your photo.", [PAPUtility firstNameForDisplayName:[[PFUser currentUser] objectForKey:kPAPUserDisplayNameKey]]], kAPNSAlertKey,
+                                          kPAPPushPayloadPayloadTypeActivityKey, kPAPPushPayloadPayloadTypeKey,
+                                          kPAPPushPayloadActivityLikeKey, kPAPPushPayloadActivityTypeKey,
+                                          [[PFUser currentUser] objectId], kPAPPushPayloadFromUserObjectIdKey,
+                                          [photo objectId], kPAPPushPayloadPhotoObjectIdKey,
+                                          nil];
+                    PFPush *push = [[PFPush alloc] init];
+                    [push setChannel:privateChannelName];
+                    [push setData:data];
+                    [push sendPushInBackground];
+                }
+            }
+           
             // refresh cache
             PFQuery *query = [PAPUtility queryForActivitiesOnPhoto:photo cachePolicy:kPFCachePolicyNetworkOnly];
             [query findObjectsInBackgroundWithBlock:^(NSArray *objects, NSError *error) {
@@ -77,7 +92,17 @@
 
         }];
     }];
-
+    
+    /*
+    // like photo in Facebook if possible
+    NSString *fbOpenGraphID = [photo objectForKey:kPAPPhotoOpenGraphIDKey];
+    if (fbOpenGraphID && fbOpenGraphID.length > 0) {
+        NSMutableDictionary *params = [NSMutableDictionary dictionaryWithCapacity:1];
+        NSString *objectURL = [NSString stringWithFormat:@"https://graph.facebook.com/%@", fbOpenGraphID];
+        [params setObject:objectURL forKey:@"object"];
+        [[PFFacebookUtils facebook] requestWithGraphPath:@"me/og.likes" andParams:params andHttpMethod:@"POST" andDelegate:nil];
+    }
+    */
 }
 
 + (void)unlikePhotoInBackground:(id)photo block:(void (^)(BOOL succeeded, NSError *error))completionBlock {
@@ -139,6 +164,7 @@
 
 + (void)processFacebookProfilePictureData:(NSData *)newProfilePictureData {
     if (newProfilePictureData.length == 0) {
+        NSLog(@"Profile picture did not download successfully.");
         return;
     }
     
@@ -154,9 +180,13 @@
         NSData *oldProfilePictureData = [NSData dataWithContentsOfFile:[profilePictureCacheURL path]];
 
         if ([oldProfilePictureData isEqualToData:newProfilePictureData]) {
+            NSLog(@"Cached profile picture matches incoming profile picture. Will not update.");
             return;
         }
     }
+
+    BOOL cachedToDisk = [[NSFileManager defaultManager] createFileAtPath:[profilePictureCacheURL path] contents:newProfilePictureData attributes:nil];
+    NSLog(@"Wrote profile picture to disk cache: %d", cachedToDisk);
 
     UIImage *image = [UIImage imageWithData:newProfilePictureData];
 
@@ -167,9 +197,11 @@
     NSData *smallRoundedImageData = UIImagePNGRepresentation(smallRoundedImage);
 
     if (mediumImageData.length > 0) {
+        NSLog(@"Uploading Medium Profile Picture");
         PFFile *fileMediumImage = [PFFile fileWithData:mediumImageData];
         [fileMediumImage saveInBackgroundWithBlock:^(BOOL succeeded, NSError *error) {
             if (!error) {
+                NSLog(@"Uploaded Medium Profile Picture");
                 [[PFUser currentUser] setObject:fileMediumImage forKey:kPAPUserProfilePicMediumKey];
                 [[PFUser currentUser] saveEventually];
             }
@@ -177,9 +209,11 @@
     }
     
     if (smallRoundedImageData.length > 0) {
+        NSLog(@"Uploading Profile Picture Thumbnail");
         PFFile *fileSmallRoundedImage = [PFFile fileWithData:smallRoundedImageData];
         [fileSmallRoundedImage saveInBackgroundWithBlock:^(BOOL succeeded, NSError *error) {
             if (!error) {
+                NSLog(@"Uploaded Profile Picture Thumbnail");
                 [[PFUser currentUser] setObject:fileSmallRoundedImage forKey:kPAPUserProfilePicSmallKey];    
                 [[PFUser currentUser] saveEventually];
             }
@@ -236,6 +270,10 @@
     [followActivity saveInBackgroundWithBlock:^(BOOL succeeded, NSError *error) {
         if (completionBlock) {
             completionBlock(succeeded, error);
+        }
+        
+        if (succeeded) {
+            [PAPUtility sendFollowingPushNotification:user];
         }
     }];
     [[PAPCache sharedCache] setFollowStatus:YES user:user];
@@ -299,6 +337,24 @@
 }
 
 
+#pragma mark Push
+
++ (void)sendFollowingPushNotification:(PFUser *)user {
+    NSString *privateChannelName = [user objectForKey:kPAPUserPrivateChannelKey];
+    if (privateChannelName && privateChannelName.length != 0) {
+        NSDictionary *data = [NSDictionary dictionaryWithObjectsAndKeys:
+                              [NSString stringWithFormat:@"%@ is now following you on Anypic.", [PAPUtility firstNameForDisplayName:[[PFUser currentUser] objectForKey:kPAPUserDisplayNameKey]]], kAPNSAlertKey,
+                              kPAPPushPayloadPayloadTypeActivityKey, kPAPPushPayloadPayloadTypeKey,
+                              kPAPPushPayloadActivityFollowKey, kPAPPushPayloadActivityTypeKey,
+                              [[PFUser currentUser] objectId], kPAPPushPayloadFromUserObjectIdKey,
+                              nil];
+        PFPush *push = [[PFPush alloc] init];
+        [push setChannel:privateChannelName];
+        [push setData:data];
+        [push sendPushInBackground];
+    }
+}
+
 #pragma mark Activities
 
 + (PFQuery *)queryForActivitiesOnPhoto:(PFObject *)photo cachePolicy:(PFCachePolicy)cachePolicy {
@@ -358,7 +414,7 @@
     
     // Draw shadow
     [[UIColor blackColor] setFill];
-    CGContextSetShadow(context, CGSizeMake(0.0f, 0.0f), 7.0f);
+    CGContextSetShadow(context, CGSizeMake( 0.0f, 0.0f), 7.0f);
     CGContextFillRect(context, CGRectMake(rect.origin.x, 
                                           rect.origin.y, 
                                           rect.size.width, 
@@ -381,7 +437,7 @@
     
     // Draw shadow
     [[UIColor blackColor] setFill];
-    CGContextSetShadow(context, CGSizeMake(0.0f, 0.0f), 7.0f);
+    CGContextSetShadow(context, CGSizeMake( 0.0f, 0.0f), 7.0f);
     CGContextFillRect(context, CGRectMake(rect.origin.x, 
                                           rect.origin.y - 5.0f, 
                                           rect.size.width, 

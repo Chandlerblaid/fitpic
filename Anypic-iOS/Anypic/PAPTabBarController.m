@@ -3,7 +3,6 @@
 //  Anypic
 //
 //  Created by Héctor Ramos on 5/15/12.
-//  Copyright (c) 2013 Parse. All rights reserved.
 //
 
 #import "PAPTabBarController.h"
@@ -22,20 +21,10 @@
     [super viewDidLoad];
 
     [[self tabBar] setBackgroundImage:[UIImage imageNamed:@"BackgroundTabBar.png"]];
-//    [[self tabBar] setSelectionIndicatorImage:[UIImage imageNamed:@"BackgroundTabBarItemSelected.png"]];
-    self.tabBar.tintColor = [UIColor colorWithRed:139.0f/255.0f green:111.0f/255.0f blue:95.0f/255.0f alpha:1.0f];
+    [[self tabBar] setSelectionIndicatorImage:[UIImage imageNamed:@"BackgroundTabBarItemSelected.png"]];
     
-    /*
-     // iOS 7 style
-     self.tabBar.tintColor = [UIColor colorWithRed:139.0f/255.0f green:111.0f/255.0f blue:95.0f/255.0f alpha:1.0f];
-     self.tabBar.barTintColor = [UIColor colorWithRed:77.0f/255.0f green:49.0f/255.0f blue:37.0f/255.0f alpha:1.0f];
-     */
     self.navController = [[UINavigationController alloc] init];
     [PAPUtility addBottomDropShadowToNavigationBarForNavigationController:self.navController];
-}
-
-- (UIStatusBarStyle)preferredStatusBarStyle {
-    return UIStatusBarStyleLightContent;
 }
 
 
@@ -45,7 +34,7 @@
     [super setViewControllers:viewControllers animated:animated];
     
     UIButton *cameraButton = [UIButton buttonWithType:UIButtonTypeCustom];
-    cameraButton.frame = CGRectMake( 94.0f, 0.0f, 131.0f, self.tabBar.bounds.size.height);
+    cameraButton.frame = CGRectMake( 105.0f, 0.0f, 110.0f, self.tabBar.bounds.size.height);
     [cameraButton setImage:[UIImage imageNamed:@"ButtonCamera.png"] forState:UIControlStateNormal];
     [cameraButton setImage:[UIImage imageNamed:@"ButtonCameraSelected.png"] forState:UIControlStateHighlighted];
     [cameraButton addTarget:self action:@selector(photoCaptureButtonAction:) forControlEvents:UIControlEventTouchUpInside];
@@ -61,11 +50,11 @@
 #pragma mark - UIImagePickerDelegate
 
 - (void)imagePickerControllerDidCancel:(UIImagePickerController *)picker {
-    [self dismissViewControllerAnimated:YES completion:nil];
+    [self dismissModalViewControllerAnimated:YES];
 }
 
 - (void)imagePickerController:(UIImagePickerController *)picker didFinishPickingMediaWithInfo:(NSDictionary *)info {
-    [self dismissViewControllerAnimated:NO completion:nil];
+    [self dismissModalViewControllerAnimated:NO];
     
     UIImage *image = [info objectForKey:UIImagePickerControllerEditedImage];
      
@@ -75,7 +64,7 @@
     [self.navController setModalTransitionStyle:UIModalTransitionStyleCrossDissolve];
     [self.navController pushViewController:viewController animated:NO];
     
-    [self presentViewController:self.navController animated:YES completion:nil];
+    [self presentModalViewController:self.navController animated:YES];
 }
 
 #pragma mark - UIActionSheetDelegate
@@ -144,8 +133,8 @@
     cameraUI.allowsEditing = YES;
     cameraUI.showsCameraControls = YES;
     cameraUI.delegate = self;
-
-    [self presentViewController:cameraUI animated:YES completion:nil];
+    
+    [self presentModalViewController:cameraUI animated:YES];
     
     return YES;
 }
@@ -177,7 +166,7 @@
     cameraUI.allowsEditing = YES;
     cameraUI.delegate = self;
     
-    [self presentViewController:cameraUI animated:YES completion:nil];
+    [self presentModalViewController:cameraUI animated:YES];
     
     return YES;
 }

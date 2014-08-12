@@ -3,7 +3,6 @@
 //  Anypic
 //
 //  Created by Mattieu Gamache-Asselin on 5/9/12.
-//  Copyright (c) 2013 Parse. All rights reserved.
 //
 
 #import "PAPSettingsActionSheetDelegate.h"
@@ -45,7 +44,7 @@ typedef enum {
         [NSException raise:NSInvalidArgumentException format:@"navController cannot be nil"];
         return;
     }
-    
+   //comeback
     switch ((kPAPSettingsActionSheetButtons)buttonIndex) {
         case kPAPSettingsProfile:
         {

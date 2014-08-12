@@ -3,10 +3,10 @@
 //  Anypic
 //
 //  Created by Mattieu Gamache-Asselin on 5/25/12.
-//  Copyright (c) 2013 Parse. All rights reserved.
 //
 
 #import "PAPConstants.h"
+
 
 NSString *const kPAPUserDefaultsActivityFeedViewControllerLastRefreshKey    = @"com.parse.Anypic.userDefaults.activityFeedViewController.lastRefresh";
 NSString *const kPAPUserDefaultsCacheFacebookFriendsKey                     = @"com.parse.Anypic.userDefaults.cache.facebookFriends";
@@ -38,6 +38,7 @@ NSString *const kPAPEditPhotoViewControllerUserInfoCommentKey = @"comment";
 
 // Field keys
 NSString *const kPAPInstallationUserKey = @"user";
+NSString *const kPAPInstallationChannelsKey = @"channels";
 
 #pragma mark - Activity Class
 // Class key
@@ -63,8 +64,8 @@ NSString *const kPAPUserFacebookIDKey                           = @"facebookId";
 NSString *const kPAPUserPhotoIDKey                              = @"photoId";
 NSString *const kPAPUserProfilePicSmallKey                      = @"profilePictureSmall";
 NSString *const kPAPUserProfilePicMediumKey                     = @"profilePictureMedium";
-NSString *const kPAPUserFacebookFriendsKey                      = @"facebookFriends";
 NSString *const kPAPUserAlreadyAutoFollowedFacebookFriendsKey   = @"userAlreadyAutoFollowedFacebookFriends";
+NSString *const kPAPUserPrivateChannelKey                       = @"channel";
 
 #pragma mark - Photo Class
 // Class key
@@ -74,7 +75,6 @@ NSString *const kPAPPhotoClassKey = @"Photo";
 NSString *const kPAPPhotoPictureKey         = @"image";
 NSString *const kPAPPhotoThumbnailKey       = @"thumbnail";
 NSString *const kPAPPhotoUserKey            = @"user";
-NSString *const kPAPPhotoOpenGraphIDKey    = @"fbOpenGraphID";
 
 
 #pragma mark - Cached Photo Attributes

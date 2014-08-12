@@ -3,7 +3,6 @@
 //  Anypic
 //
 //  Created by Héctor Ramos on 5/2/12.
-//  Copyright (c) 2013 Parse. All rights reserved.
 //
 
 #import "PAPPhotoTimelineViewController.h"
@@ -35,21 +34,22 @@
     [[NSNotificationCenter defaultCenter] removeObserver:self name:PAPPhotoDetailsViewControllerUserDeletedPhotoNotification object:nil];
 }
 
-- (id)initWithStyle:(UITableViewStyle)style {
+- (id)initWithStyle:(UITableViewStyle)style
+{
     self = [super initWithStyle:style];
     if (self) {
         
         self.outstandingSectionHeaderQueries = [NSMutableDictionary dictionary];
         
         // The className to query on
-        self.parseClassName = kPAPPhotoClassKey;
+        self.className = kPAPPhotoClassKey;
+        
+        // Whether the built-in pull-to-refresh is enabled
+        self.pullToRefreshEnabled = YES;
         
         // Whether the built-in pagination is enabled
         self.paginationEnabled = YES;
-
-        // Whether the built-in pull-to-refresh is enabled
-        self.pullToRefreshEnabled = YES;
-
+        
         // The number of objects to show per page
         self.objectsPerPage = 10;
         
@@ -65,14 +65,14 @@
 #pragma mark - UIViewController
 
 - (void)viewDidLoad {
-    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    [self.tableView setSeparatorStyle:UITableViewCellSeparatorStyleNone]; // PFQueryTableViewController reads this in viewDidLoad -- would prefer to throw this in init, but didn't work
     
     [super viewDidLoad];
     
     UIView *texturedBackgroundView = [[UIView alloc] initWithFrame:self.view.bounds];
     texturedBackgroundView.backgroundColor = [UIColor colorWithPatternImage:[UIImage imageNamed:@"BackgroundLeather.png"]];
     self.tableView.backgroundView = texturedBackgroundView;
-
+        
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(userDidPublishPhoto:) name:PAPTabBarControllerDidFinishEditingPhotoNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(userFollowingChanged:) name:PAPUtilityUserFollowingChangedNotification object:nil];
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(userDidDeletePhoto:) name:PAPPhotoDetailsViewControllerUserDeletedPhotoNotification object:nil];
@@ -88,10 +88,6 @@
         self.shouldReloadOnAppear = NO;
         [self loadObjects];
     }
-}
-
-- (UIStatusBarStyle)preferredStatusBarStyle {
-    return UIStatusBarStyleLightContent;
 }
 
 
@@ -131,7 +127,7 @@
     [headerView.likeButton setTag:section];
     
     NSDictionary *attributesForPhoto = [[PAPCache sharedCache] attributesForPhoto:photo];
-
+                                        
     if (attributesForPhoto) {
         [headerView setLikeStatus:[[PAPCache sharedCache] isPhotoLikedByCurrentUser:photo]];
         [headerView.likeButton setTitle:[[[PAPCache sharedCache] likeCountForPhoto:photo] description] forState:UIControlStateNormal];
@@ -149,12 +145,12 @@
         
         @synchronized(self) {
             // check if we can update the cache
-            NSNumber *outstandingSectionHeaderQueryStatus = [self.outstandingSectionHeaderQueries objectForKey:@(section)];
+            NSNumber *outstandingSectionHeaderQueryStatus = [self.outstandingSectionHeaderQueries objectForKey:[NSNumber numberWithInt:section]];
             if (!outstandingSectionHeaderQueryStatus) {
                 PFQuery *query = [PAPUtility queryForActivitiesOnPhoto:photo cachePolicy:kPFCachePolicyNetworkOnly];
                 [query findObjectsInBackgroundWithBlock:^(NSArray *objects, NSError *error) {
                     @synchronized(self) {
-                        [self.outstandingSectionHeaderQueries removeObjectForKey:@(section)];
+                        [self.outstandingSectionHeaderQueries removeObjectForKey:[NSNumber numberWithInt:section]];
 
                         if (error) {
                             return;
@@ -246,10 +242,10 @@
 
 
 #pragma mark - PFQueryTableViewController
-#pragma GCC diagnostic ignored "-Wundeclared-selector"
+
 - (PFQuery *)queryForTable {
     if (![PFUser currentUser]) {
-        PFQuery *query = [PFQuery queryWithClassName:self.parseClassName];
+        PFQuery *query = [PFQuery queryWithClassName:self.className];
         [query setLimit:0];
         return query;
     }
@@ -257,14 +253,13 @@
     PFQuery *followingActivitiesQuery = [PFQuery queryWithClassName:kPAPActivityClassKey];
     [followingActivitiesQuery whereKey:kPAPActivityTypeKey equalTo:kPAPActivityTypeFollow];
     [followingActivitiesQuery whereKey:kPAPActivityFromUserKey equalTo:[PFUser currentUser]];
-    followingActivitiesQuery.cachePolicy = kPFCachePolicyNetworkOnly;
     followingActivitiesQuery.limit = 1000;
     
-    PFQuery *photosFromFollowedUsersQuery = [PFQuery queryWithClassName:self.parseClassName];
+    PFQuery *photosFromFollowedUsersQuery = [PFQuery queryWithClassName:self.className];
     [photosFromFollowedUsersQuery whereKey:kPAPPhotoUserKey matchesKey:kPAPActivityToUserKey inQuery:followingActivitiesQuery];
     [photosFromFollowedUsersQuery whereKeyExists:kPAPPhotoPictureKey];
 
-    PFQuery *photosFromCurrentUserQuery = [PFQuery queryWithClassName:self.parseClassName];
+    PFQuery *photosFromCurrentUserQuery = [PFQuery queryWithClassName:self.className];
     [photosFromCurrentUserQuery whereKey:kPAPPhotoUserKey equalTo:[PFUser currentUser]];
     [photosFromCurrentUserQuery whereKeyExists:kPAPPhotoPictureKey];
 
@@ -282,33 +277,11 @@
     if (self.objects.count == 0 || ![[UIApplication sharedApplication].delegate performSelector:@selector(isParseReachable)]) {
         [query setCachePolicy:kPFCachePolicyCacheThenNetwork];
     }
-
-    /*
-     This query will result in an error if the schema hasn't been set beforehand. While Parse usually handles this automatically, this is not the case for a compound query such as this one. The error thrown is:
-     
-     Error: bad special key: __type
-     
-     To set up your schema, you may post a photo with a caption. This will automatically set up the Photo and Activity classes needed by this query.
-     
-     You may also use the Data Browser at Parse.com to set up your classes in the following manner.
-     
-     Create a User class: "User" (if it does not exist)
-     
-     Create a Custom class: "Activity"
-     - Add a column of type pointer to "User", named "fromUser"
-     - Add a column of type pointer to "User", named "toUser"
-     - Add a string column "type"
-     
-     Create a Custom class: "Photo"
-     - Add a column of type pointer to "User", named "user"
-     
-     You'll notice that these correspond to each of the fields used by the preceding query.
-     */
-
+    
     return query;
 }
 
-- (PFObject *)objectAtIndexPath:(NSIndexPath *)indexPath {
+- (PFObject *)objectAtIndex:(NSIndexPath *)indexPath {
     // overridden, since we want to implement sections
     if (indexPath.section < self.objects.count) {
         return [self.objects objectAtIndex:indexPath.section];
@@ -331,17 +304,14 @@
             cell = [[PAPPhotoCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:CellIdentifier];
             [cell.photoButton addTarget:self action:@selector(didTapOnPhotoAction:) forControlEvents:UIControlEventTouchUpInside];
         }
-
+        
         cell.photoButton.tag = indexPath.section;
         cell.imageView.image = [UIImage imageNamed:@"PlaceholderPhoto.png"];
+        cell.imageView.file = [object objectForKey:kPAPPhotoPictureKey];
         
-        if (object) {
-            cell.imageView.file = [object objectForKey:kPAPPhotoPictureKey];
-            
-            // PFQTVC will take care of asynchronously downloading files, but will only load them when the tableview is not moving. If the data is there, let's load it right away.
-            if ([cell.imageView.file isDataAvailable]) {
-                [cell.imageView loadInBackground];
-            }
+        // PFQTVC will take care of asynchronously downloading files, but will only load them when the tableview is not moving. If the data is there, let's load it right away.
+        if ([cell.imageView.file isDataAvailable]) {
+            [cell.imageView loadInBackground];
         }
 
         return cell;
@@ -386,7 +356,6 @@
 }
 
 - (void)photoHeaderView:(PAPPhotoHeaderView *)photoHeaderView didTapLikePhotoButton:(UIButton *)button photo:(PFObject *)photo {
-	// Disable the button so users cannot send duplicate requests
     [photoHeaderView shouldEnableLikeButton:NO];
     
     BOOL liked = !button.selected;
@@ -466,10 +435,7 @@
 
 - (void)userDidDeletePhoto:(NSNotification *)note {
     // refresh timeline after a delay
-    dispatch_time_t time = dispatch_time(DISPATCH_TIME_NOW, 1.0 * NSEC_PER_SEC);
-    dispatch_after(time, dispatch_get_main_queue(), ^(void){
-        [self loadObjects];
-    });
+    [self performSelector:@selector(loadObjects) withObject:nil afterDelay:1.0f];
 }
 
 - (void)userDidPublishPhoto:(NSNotification *)note {

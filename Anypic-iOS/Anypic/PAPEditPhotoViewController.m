@@ -3,7 +3,6 @@
 //  Anypic
 //
 //  Created by Héctor Ramos on 5/3/12.
-//  Copyright (c) 2013 Parse. All rights reserved.
 //
 
 #import "PAPEditPhotoViewController.h"
@@ -142,9 +141,14 @@
         [[UIApplication sharedApplication] endBackgroundTask:self.fileUploadBackgroundTaskId];
     }];
     
+    NSLog(@"Requested background expiration task with id %d for Anypic photo upload", self.fileUploadBackgroundTaskId);
     [self.photoFile saveInBackgroundWithBlock:^(BOOL succeeded, NSError *error) {
         if (succeeded) {
+            NSLog(@"Photo uploaded successfully");
             [self.thumbnailFile saveInBackgroundWithBlock:^(BOOL succeeded, NSError *error) {
+                if (succeeded) {
+                    NSLog(@"Thumbnail uploaded successfully");
+                }
                 [[UIApplication sharedApplication] endBackgroundTask:self.fileUploadBackgroundTaskId];
             }];
         } else {
@@ -162,9 +166,8 @@
     [self.scrollView setContentSize:scrollViewContentSize];
     
     CGPoint scrollViewContentOffset = self.scrollView.contentOffset;
-    // Align the bottom edge of the photo with the keyboard
-    scrollViewContentOffset.y = scrollViewContentOffset.y + keyboardFrameEnd.size.height*3.0f - [UIScreen mainScreen].bounds.size.height;
-    
+    scrollViewContentOffset.y += keyboardFrameEnd.size.height;
+    scrollViewContentOffset.y -= 42.0f;
     [self.scrollView setContentOffset:scrollViewContentOffset animated:YES];
 }
 
@@ -186,7 +189,6 @@
                                   nil];
     }
     
-    // Make sure there were no errors creating the image files
     if (!self.photoFile || !self.thumbnailFile) {
         UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Couldn't post your photo" message:nil delegate:nil cancelButtonTitle:nil otherButtonTitles:@"Dismiss", nil];
         [alert show];
@@ -211,9 +213,11 @@
         [[UIApplication sharedApplication] endBackgroundTask:self.photoPostBackgroundTaskId];
     }];
 
-    // Save the Photo PFObject
+    // save
     [photo saveInBackgroundWithBlock:^(BOOL succeeded, NSError *error) {
         if (succeeded) {
+            NSLog(@"Photo uploaded");
+            
             [[PAPCache sharedCache] setAttributesForPhoto:photo likers:[NSArray array] commenters:[NSArray array] likedByCurrentUser:NO];
             
             // userInfo might contain any caption which might have been posted by the uploader
@@ -240,18 +244,18 @@
             
             [[NSNotificationCenter defaultCenter] postNotificationName:PAPTabBarControllerDidFinishEditingPhotoNotification object:photo];
         } else {
+            NSLog(@"Photo failed to save: %@", error);
             UIAlertView *alert = [[UIAlertView alloc] initWithTitle:@"Couldn't post your photo" message:nil delegate:nil cancelButtonTitle:nil otherButtonTitles:@"Dismiss", nil];
             [alert show];
         }
         [[UIApplication sharedApplication] endBackgroundTask:self.photoPostBackgroundTaskId];
     }];
     
-    // Dismiss this screen
-    [self.parentViewController dismissViewControllerAnimated:YES completion:nil];
+    [self.parentViewController dismissModalViewControllerAnimated:YES];
 }
 
 - (void)cancelButtonAction:(id)sender {
-    [self.parentViewController dismissViewControllerAnimated:YES completion:nil];
+    [self.parentViewController dismissModalViewControllerAnimated:YES];
 }
 
 @end

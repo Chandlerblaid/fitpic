@@ -1,0 +1,19 @@
+dependencies: \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/AppDelegate.m \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/AppDelegate.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/PAPTabBarController.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/PAPEditPhotoViewController.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Reachability/Reachability.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/MBProgressHUD/MBProgressHUD.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/PAPHomeViewController.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/PAPPhotoTimelineViewController.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/PAPPhotoHeaderView.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/PAPLogInViewController.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/UIImage+ResizeAdditions.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/PAPAccountViewController.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/PAPWelcomeViewController.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/PAPActivityFeedViewController.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/PAPActivityCell.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/PAPBaseTextCell.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/PAPPhotoDetailsViewController.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/PAPPhotoDetailsHeaderView.h

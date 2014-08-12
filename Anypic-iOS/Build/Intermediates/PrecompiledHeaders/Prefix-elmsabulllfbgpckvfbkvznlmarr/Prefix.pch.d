@@ -1,0 +1,36 @@
+dependencies: \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Prefix.pch \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/Parse.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFACL.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFAnonymousUtils.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFUser.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFObject.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFConstants.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PF_Facebook.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PF_FBLoginDialog.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PF_FBDialog.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PF_FBRequest.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFFacebookUtils.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFFile.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFGeoPoint.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFImageView.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFLogInViewController.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFLogInView.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFSignUpViewController.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFSignUpView.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFProduct.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFPush.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFQuery.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFPurchase.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFQueryTableViewController.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PF_EGORefreshTableHeaderView.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFTableViewCell.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFInstallation.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFRelation.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFRole.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PFTwitterUtils.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PF_Twitter.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/External/Parse.framework/Headers/PF_FBConnect.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/PAPCache.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/PAPConstants.h \
+  /Users/alphonsocrawford/Documents/Anypic/Anypic-iOS/Anypic/PAPUtility.h

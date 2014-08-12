@@ -3,14 +3,12 @@
 //  Anypic
 //
 //  Created by Héctor Ramos on 5/10/12.
-//  Copyright (c) 2013 Parse. All rights reserved.
 //
 
 #import "PAPWelcomeViewController.h"
 #import "AppDelegate.h"
 
 @implementation PAPWelcomeViewController
-
 
 #pragma mark - UIViewController
 - (void)loadView {
@@ -44,37 +42,22 @@
         [(AppDelegate*)[[UIApplication sharedApplication] delegate] logOut];
         return;
     }
+    
+    [PFFacebookUtils extendAccessTokenIfNeededForUser:[PFUser currentUser] block:^(BOOL succeeded, NSError *error) {
+        // Check if user is missing a Facebook ID
+        if ([PAPUtility userHasValidFacebookData:[PFUser currentUser]]) {
+            // User has Facebook ID.
 
-    // Check if user is missing a Facebook ID
-    if ([PAPUtility userHasValidFacebookData:[PFUser currentUser]]) {
-        // User has Facebook ID.
-        
-        // refresh Facebook friends on each launch
-        [FBRequestConnection startForMyFriendsWithCompletionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
-            if (!error) {
-                if ([[UIApplication sharedApplication].delegate respondsToSelector:@selector(facebookRequestDidLoad:)]) {
-                    [[UIApplication sharedApplication].delegate performSelector:@selector(facebookRequestDidLoad:) withObject:result];
-                }
-            } else {
-                if ([[UIApplication sharedApplication].delegate respondsToSelector:@selector(facebookRequestDidFailWithError:)]) {
-                    [[UIApplication sharedApplication].delegate performSelector:@selector(facebookRequestDidFailWithError:) withObject:error];
-                }
-            }
-        }];
-    } else {
-        NSLog(@"Current user is missing their Facebook ID");
-        [FBRequestConnection startForMeWithCompletionHandler:^(FBRequestConnection *connection, id result, NSError *error) {
-            if (!error) {
-                if ([[UIApplication sharedApplication].delegate respondsToSelector:@selector(facebookRequestDidLoad:)]) {
-                    [[UIApplication sharedApplication].delegate performSelector:@selector(facebookRequestDidLoad:) withObject:result];
-                }
-            } else {
-                if ([[UIApplication sharedApplication].delegate respondsToSelector:@selector(facebookRequestDidFailWithError:)]) {
-                    [[UIApplication sharedApplication].delegate performSelector:@selector(facebookRequestDidFailWithError:) withObject:error];
-                }
-            }
-        }];
-    }
+            // refresh Facebook friends on each launch
+            [[PFFacebookUtils facebook] requestWithGraphPath:@"me/friends" andDelegate:(AppDelegate*)[[UIApplication sharedApplication] delegate]];
+            
+        } else {
+            NSLog(@"User missing Facebook ID"); 
+            [[PFFacebookUtils facebook] requestWithGraphPath:@"me/?fields=name,picture,email" andDelegate:(AppDelegate*)[[UIApplication sharedApplication] delegate]];
+        }
+    }];
+    
+
 }
 
 @end

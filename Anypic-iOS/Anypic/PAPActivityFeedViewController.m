@@ -3,7 +3,6 @@
 //  Anypic
 //
 //  Created by Mattieu Gamache-Asselin on 5/9/12.
-//  Copyright (c) 2013 Parse. All rights reserved.
 //
 
 #import "PAPActivityFeedViewController.h"
@@ -24,6 +23,11 @@
 @property (nonatomic, strong) UIView *blankTimelineView;
 @end
 
+static NSString *const kPAPActivityTypeLikeString = @"liked your photo";
+static NSString *const kPAPActivityTypeCommentString = @"commented on your photo";
+static NSString *const kPAPActivityTypeFollowString = @"started following you";
+static NSString *const kPAPActivityTypeJoinedString = @"joined Anypic";
+
 @implementation PAPActivityFeedViewController
 
 @synthesize settingsActionSheetDelegate;
@@ -40,14 +44,14 @@
     self = [super initWithStyle:style];
     if (self) {
         // The className to query on
-        self.parseClassName = kPAPActivityClassKey;
+        self.className = kPAPActivityClassKey;
+        
+        // Whether the built-in pull-to-refresh is enabled
+        self.pullToRefreshEnabled = YES;
         
         // Whether the built-in pagination is enabled
         self.paginationEnabled = YES;
         
-        // Whether the built-in pull-to-refresh is enabled
-        self.pullToRefreshEnabled = YES;
-
         // The number of objects to show per page
         self.objectsPerPage = 15;          
     }
@@ -84,10 +88,6 @@
     lastRefresh = [[NSUserDefaults standardUserDefaults] objectForKey:kPAPUserDefaultsActivityFeedViewControllerLastRefreshKey];
 }
 
-- (UIStatusBarStyle)preferredStatusBarStyle {
-    return UIStatusBarStyleLightContent;
-}
-
 
 #pragma mark - UITableViewDelegate
 
@@ -95,10 +95,10 @@
     if (indexPath.row < self.objects.count) {
         PFObject *object = [self.objects objectAtIndex:indexPath.row];
         NSString *activityString = [PAPActivityFeedViewController stringForActivityType:(NSString*)[object objectForKey:kPAPActivityTypeKey]];
-
         PFUser *user = (PFUser*)[object objectForKey:kPAPActivityFromUserKey];
-        NSString *nameString = NSLocalizedString(@"Someone", nil);
-        if (user && [user objectForKey:kPAPUserDisplayNameKey] && [[user objectForKey:kPAPUserDisplayNameKey] length] > 0) {
+        NSString *nameString = @"";
+
+        if (user) {
             nameString = [user objectForKey:kPAPUserDisplayNameKey];
         }
         
@@ -127,16 +127,16 @@
 }
 
 #pragma mark - PFQueryTableViewController
-#pragma GCC diagnostic ignored "-Wundeclared-selector"
+
 - (PFQuery *)queryForTable {
     
     if (![PFUser currentUser]) {
-        PFQuery *query = [PFQuery queryWithClassName:self.parseClassName];
+        PFQuery *query = [PFQuery queryWithClassName:self.className];
         [query setLimit:0];
         return query;
     }
 
-    PFQuery *query = [PFQuery queryWithClassName:self.parseClassName];
+    PFQuery *query = [PFQuery queryWithClassName:self.className];
     [query whereKey:kPAPActivityToUserKey equalTo:[PFUser currentUser]];
     [query whereKey:kPAPActivityFromUserKey notEqualTo:[PFUser currentUser]];
     [query whereKeyExists:kPAPActivityFromUserKey];
@@ -151,15 +151,17 @@
     //
     // If there is no network connection, we will hit the cache first.
     if (self.objects.count == 0 || ![[UIApplication sharedApplication].delegate performSelector:@selector(isParseReachable)]) {
+        NSLog(@"Loading from cache");
         [query setCachePolicy:kPFCachePolicyCacheThenNetwork];
     }
     
+
     return query;
 }
 
 - (void)objectsDidLoad:(NSError *)error {
     [super objectsDidLoad:error];
-
+    
     lastRefresh = [NSDate date];
     [[NSUserDefaults standardUserDefaults] setObject:lastRefresh forKey:kPAPUserDefaultsActivityFeedViewControllerLastRefreshKey];
     [[NSUserDefaults standardUserDefaults] synchronize];
@@ -190,7 +192,7 @@
         }
         
         if (unreadCount > 0) {
-            self.navigationController.tabBarItem.badgeValue = [NSString stringWithFormat:@"%lu",(unsigned long)unreadCount];
+            self.navigationController.tabBarItem.badgeValue = [NSString stringWithFormat:@"%d",unreadCount];
         } else {
             self.navigationController.tabBarItem.badgeValue = nil;
         }
@@ -257,24 +259,25 @@
 
 + (NSString *)stringForActivityType:(NSString *)activityType {
     if ([activityType isEqualToString:kPAPActivityTypeLike]) {
-        return NSLocalizedString(@"liked your photo", nil);
+        return kPAPActivityTypeLikeString;
     } else if ([activityType isEqualToString:kPAPActivityTypeFollow]) {
-        return NSLocalizedString(@"started following you", nil);
+        return kPAPActivityTypeFollowString;
     } else if ([activityType isEqualToString:kPAPActivityTypeComment]) {
-        return NSLocalizedString(@"commented on your photo", nil);
+        return kPAPActivityTypeCommentString;
     } else if ([activityType isEqualToString:kPAPActivityTypeJoined]) {
-        return NSLocalizedString(@"joined Anypic", nil);
+        return kPAPActivityTypeJoinedString;
     } else {
         return nil;
     }
 }
 
-
 #pragma mark - ()
+
+
 
 - (void)settingsButtonAction:(id)sender {
     settingsActionSheetDelegate = [[PAPSettingsActionSheetDelegate alloc] initWithNavigationController:self.navigationController];
-    UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:nil delegate:settingsActionSheetDelegate cancelButtonTitle:@"Cancel" destructiveButtonTitle:nil otherButtonTitles:NSLocalizedString(@"My Profile", nil), NSLocalizedString(@"Find Friends", nil), NSLocalizedString(@"Log Out", nil), nil];
+    UIActionSheet *actionSheet = [[UIActionSheet alloc] initWithTitle:nil delegate:settingsActionSheetDelegate cancelButtonTitle:@"Cancel" destructiveButtonTitle:nil otherButtonTitles:@"My Profile", @"Find Friends", @"Log Out", nil];
     
     [actionSheet showFromTabBar:self.tabBarController.tabBar];
 }

@@ -11,11 +11,11 @@ $(function() {
       return "#pic/" + this.id;
     },
     photoImageURL: function() {
-      return this.get("image").url.replace(/http:\/\//,"https://s3.amazonaws.com/");
+      return this.get("image").url;
     },
     avatarImageURL: function() {
       if (this.get("user").get("profilePictureMedium")) {
-        return this.get("user").get("profilePictureMedium").url.replace(/http:\/\//,"https://s3.amazonaws.com/");
+        return this.get("user").get("profilePictureMedium").url;
       }
   
       return "";
@@ -66,12 +66,13 @@ $(function() {
       // Create our collection of Photos
       this.photos = new PhotoList();
 
-      // Only show photos uploaded by Parse employees
-      var userQuery = new Parse.Query(Parse.User);
-      userQuery.containedIn("objectId", [ "qOnj6eZPls", "AfQj8ksNwf", "46RvD6FsBS", "JDEuetLDXN", "Qi4eOJgPfi", "4MTgLcPMn2", "jX2d8bhb0S", "uco0D9h9KJ", "xgkncrHTZJ", "uTsAcCyPyZ", "7oTcL0tY1u", "kFk2qAJ4xO" ]);
+      var parseEmployeeQuery = new Parse.Query(Parse.User);
+      parseEmployeeQuery.containedIn("facebookId", [ "400680", "403902", "702499", "1225726", "3622585", "4806789", "6409809", "121800083", "500011038", "558159381", "721873341", "723748661", "865225242" ]);
+
+      // Setup the query for the collection to look for the 8 most recent photos
       this.photos.query = new Parse.Query(Photo);
       this.photos.query.include("user");
-      this.photos.query.matchesQuery("user", userQuery);
+      this.photos.query.matchesQuery("user", parseEmployeeQuery);
 
       this.photos.query.limit(8);
       this.photos.query.descending("createdAt");
@@ -113,7 +114,7 @@ $(function() {
 
       $("#slides").slides({
         preload: true,
-        preloadImage: 'images/spinner.gif',
+        preloadImage: '/images/spinner.gif',
         play: 3000,
         pause: 2500,
         hoverPause: true
@@ -158,8 +159,6 @@ $(function() {
       this.photoView = new SinglePhotoView({model: photo});
       this.$("#content").append(this.photoView.render().el);
       this.$("#photo-container").fadeIn();
-      // Update the Smart Banner metadata to include the fragment for this photo
-      $("meta[name|='apple-itunes-app']").attr('content', "app-id=539741538, app-argument=/#pic/" + photo.id);
     },
 
     showError: function() {
@@ -259,9 +258,6 @@ $(function() {
         this.$("#latest").html(this.latestPhotosView.render().el);
         this.$("#latest").fadeIn();
       }
-
-      // Reset the Smart Banner metadata
-      $("meta[name|='apple-itunes-app']").attr('content', "app-id=539741538");
     },
 
     showLandingPage: function() {

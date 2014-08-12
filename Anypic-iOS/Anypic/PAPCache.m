@@ -3,7 +3,6 @@
 //  Anypic
 //
 //  Created by Héctor Ramos on 5/31/12.
-//  Copyright (c) 2013 Parse. All rights reserved.
 //
 
 #import "PAPCache.h"
@@ -45,9 +44,9 @@
 - (void)setAttributesForPhoto:(PFObject *)photo likers:(NSArray *)likers commenters:(NSArray *)commenters likedByCurrentUser:(BOOL)likedByCurrentUser {
     NSDictionary *attributes = [NSDictionary dictionaryWithObjectsAndKeys:
                                       [NSNumber numberWithBool:likedByCurrentUser],kPAPPhotoAttributesIsLikedByCurrentUserKey,
-                                      @([likers count]),kPAPPhotoAttributesLikeCountKey,
+                                      [NSNumber numberWithInt:[likers count]],kPAPPhotoAttributesLikeCountKey,
                                       likers,kPAPPhotoAttributesLikersKey,
-                                      @([commenters count]),kPAPPhotoAttributesCommentCountKey,
+                                      [NSNumber numberWithInt:[commenters count]],kPAPPhotoAttributesCommentCountKey,
                                       commenters,kPAPPhotoAttributesCommentersKey,
                                       nil];
     [self setAttributes:attributes forPhoto:photo];

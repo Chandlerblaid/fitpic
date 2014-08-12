@@ -3,7 +3,6 @@
 //  Anypic
 //
 //  Created by Mattieu Gamache-Asselin on 5/9/12.
-//  Copyright (c) 2013 Parse. All rights reserved.
 //
 
 #import "PAPFindFriendsViewController.h"
@@ -27,6 +26,11 @@ typedef enum {
 @property (nonatomic, strong) NSMutableDictionary *outstandingCountQueries;
 @end
 
+static NSUInteger const kPAPCellFollowTag = 2;
+static NSUInteger const kPAPCellNameLabelTag = 3;
+static NSUInteger const kPAPCellAvatarTag = 4;
+static NSUInteger const kPAPCellPhotoNumLabelTag = 5;
+
 @implementation PAPFindFriendsViewController
 @synthesize headerView;
 @synthesize followStatus;
@@ -47,14 +51,16 @@ typedef enum {
         // Whether the built-in pull-to-refresh is enabled
         self.pullToRefreshEnabled = YES;
         
-        // Whether the built-in pull-to-refresh is enabled
-        self.pullToRefreshEnabled = YES;
-
+        // Whether the built-in pagination is enabled
+        self.paginationEnabled = YES;
+        
         // The number of objects to show per page
         self.objectsPerPage = 15;
         
         // Used to determine Follow/Unfollow All button status
         self.followStatus = PAPFindFriendsFollowingSome;
+        
+        [self.tableView setSeparatorColor:[UIColor colorWithRed:210.0f/255.0f green:203.0f/255.0f blue:182.0f/255.0f alpha:1.0]];
     }
     return self;
 }
@@ -65,13 +71,22 @@ typedef enum {
 - (void)viewDidLoad {
     [super viewDidLoad];
     
-    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
-
     UIView *texturedBackgroundView = [[UIView alloc] initWithFrame:self.view.bounds];
     [texturedBackgroundView setBackgroundColor:[UIColor colorWithPatternImage:[UIImage imageNamed:@"BackgroundLeather.png"]]];
     self.tableView.backgroundView = texturedBackgroundView;
         
     self.navigationItem.titleView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"TitleFindFriends.png"]];
+    
+    UIButton *backButton = [UIButton buttonWithType:UIButtonTypeCustom];
+    [backButton setFrame:CGRectMake(0, 0, 52.0f, 32.0f)];
+    [backButton setTitle:@"Back" forState:UIControlStateNormal];
+    [backButton setTitleColor:[UIColor colorWithRed:214.0f/255.0f green:210.0f/255.0f blue:197.0f/255.0f alpha:1.0] forState:UIControlStateNormal];
+    [[backButton titleLabel] setFont:[UIFont boldSystemFontOfSize:[UIFont smallSystemFontSize]]];
+    [backButton setTitleEdgeInsets:UIEdgeInsetsMake(0, 5.0f, 0, 0)];
+    [backButton addTarget:self action:@selector(backButtonAction:) forControlEvents:UIControlEventTouchUpInside];
+    [backButton setBackgroundImage:[UIImage imageNamed:@"ButtonBack.png"] forState:UIControlStateNormal];
+    [backButton setBackgroundImage:[UIImage imageNamed:@"ButtonBackSelected.png"] forState:UIControlStateHighlighted];
+    self.navigationItem.leftBarButtonItem = [[UIBarButtonItem alloc] initWithCustomView:backButton];
     
     if ([MFMailComposeViewController canSendMail] || [MFMessageComposeViewController canSendText]) {
         self.headerView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 320, 67)];
@@ -81,13 +96,8 @@ typedef enum {
         [clearButton addTarget:self action:@selector(inviteFriendsButtonAction:) forControlEvents:UIControlEventTouchUpInside];
         [clearButton setFrame:self.headerView.frame];
         [self.headerView addSubview:clearButton];
-        NSString *inviteString = NSLocalizedString(@"Invite friends", @"Invite friends");
-        CGRect boundingRect = [inviteString boundingRectWithSize:CGSizeMake(310.0f, CGFLOAT_MAX)
-                                                         options:NSStringDrawingTruncatesLastVisibleLine|NSStringDrawingUsesLineFragmentOrigin
-                                                      attributes:@{NSFontAttributeName:[UIFont boldSystemFontOfSize:18.0f]}
-                                                         context:nil];
-        CGSize inviteStringSize = boundingRect.size;
-        
+        NSString *inviteString = @"Invite friends";
+        CGSize inviteStringSize = [inviteString sizeWithFont:[UIFont boldSystemFontOfSize:18] constrainedToSize:CGSizeMake(310, CGFLOAT_MAX) lineBreakMode:UILineBreakModeTailTruncation];
         UILabel *inviteLabel = [[UILabel alloc] initWithFrame:CGRectMake(10, (self.headerView.frame.size.height-inviteStringSize.height)/2, inviteStringSize.width, inviteStringSize.height)];
         [inviteLabel setText:inviteString];
         [inviteLabel setFont:[UIFont boldSystemFontOfSize:18]];
@@ -120,19 +130,10 @@ typedef enum {
     NSArray *facebookFriends = [[PAPCache sharedCache] facebookFriends];
     
     // Query for all friends you have on facebook and who are using the app
-    PFQuery *friendsQuery = [PFUser query];
-    [friendsQuery whereKey:kPAPUserFacebookIDKey containedIn:facebookFriends];
-    
-    // Query for all Parse employees
-    NSMutableArray *parseEmployees = [[NSMutableArray alloc] initWithArray:kPAPParseEmployeeAccounts];
-    [parseEmployees removeObject:[[PFUser currentUser] objectForKey:kPAPUserFacebookIDKey]];
-    PFQuery *parseEmployeeQuery = [PFUser query];
-    [parseEmployeeQuery whereKey:kPAPUserFacebookIDKey containedIn:parseEmployees];
-        
-    // Combine the two queries with an OR
-    PFQuery *query = [PFQuery orQueryWithSubqueries:[NSArray arrayWithObjects:friendsQuery, parseEmployeeQuery, nil]];
+    PFQuery *query = [PFUser query];
+    [query whereKey:kPAPUserFacebookIDKey containedIn:facebookFriends];    
+
     query.cachePolicy = kPFCachePolicyNetworkOnly;
-    
     if (self.objects.count == 0) {
         query.cachePolicy = kPFCachePolicyCacheThenNetwork;
     }
@@ -198,8 +199,14 @@ typedef enum {
     
     if (attributes) {
         // set them now
+        NSString *pluralizedPhoto;
         NSNumber *number = [[PAPCache sharedCache] photoCountForUser:(PFUser *)object];
-        [cell.photoLabel setText:[NSString stringWithFormat:@"%@ photo%@", number, [number intValue] == 1 ? @"": @"s"]];
+        if ([number intValue] == 1) {
+            pluralizedPhoto = @"photo";
+        } else {
+            pluralizedPhoto = @"photos";
+        }
+        [cell.photoLabel setText:[NSString stringWithFormat:@"%@ %@", number, pluralizedPhoto]];
     } else {
         @synchronized(self) {
             NSNumber *outstandingCountQueryStatus = [self.outstandingCountQueries objectForKey:indexPath];
@@ -214,7 +221,14 @@ typedef enum {
                         [self.outstandingCountQueries removeObjectForKey:indexPath];
                     }
                     PAPFindFriendsCell *actualCell = (PAPFindFriendsCell*)[tableView cellForRowAtIndexPath:indexPath];
-                    [actualCell.photoLabel setText:[NSString stringWithFormat:@"%d photo%@", number, number == 1 ? @"" : @"s"]];
+                    NSString *pluralizedPhoto;
+                    if (number == 1) {
+                        pluralizedPhoto = @"photo";
+                    } else {
+                        pluralizedPhoto = @"photos";
+                    }
+                    [actualCell.photoLabel setText:[NSString stringWithFormat:@"%d %@", number, pluralizedPhoto]];
+                    
                 }];
             };
         }
@@ -292,7 +306,7 @@ typedef enum {
 
 /* Called when the user cancels the address book view controller. We simply dismiss it. */
 - (void)peoplePickerNavigationControllerDidCancel:(ABPeoplePickerNavigationController *)peoplePicker {
-    [self dismissViewControllerAnimated:YES completion:nil];
+    [self dismissModalViewControllerAnimated:YES];
 }
 
 /* Called when a member of the address book is selected, we return YES to display the member's details. */
@@ -338,7 +352,7 @@ typedef enum {
 
 /* Simply dismiss the MFMailComposeViewController when the user sends an email or cancels */
 - (void)mailComposeController:(MFMailComposeViewController *)controller didFinishWithResult:(MFMailComposeResult)result error:(NSError *)error {
-    [self dismissViewControllerAnimated:YES completion:nil];
+    [self dismissModalViewControllerAnimated:YES];  
 }
 
 
@@ -346,7 +360,7 @@ typedef enum {
 
 /* Simply dismiss the MFMessageComposeViewController when the user sends a text or cancels */
 - (void)messageComposeViewController:(MFMessageComposeViewController *)controller didFinishWithResult:(MessageComposeResult)result {
-    [self dismissViewControllerAnimated:YES completion:nil];
+    [self dismissModalViewControllerAnimated:YES];
 }
 
 
@@ -382,7 +396,7 @@ typedef enum {
         addressBook.displayedProperties = [NSArray arrayWithObject:[NSNumber numberWithInt:kABPersonPhoneProperty]];
     }
 
-    [self presentViewController:addressBook animated:YES completion:nil];
+    [self presentModalViewController:addressBook animated:YES];
 }
 
 - (void)followAllFriendsButtonAction:(id)sender {
@@ -486,8 +500,8 @@ typedef enum {
     // Dismiss the current modal view controller and display the compose email one.
     // Note that we do not animate them. Doing so would require us to present the compose
     // mail one only *after* the address book is dismissed.
-    [self dismissViewControllerAnimated:NO completion:nil];
-    [self presentViewController:composeEmailViewController animated:NO completion:nil];
+    [self dismissModalViewControllerAnimated:NO];
+    [self presentModalViewController:composeEmailViewController animated:NO];
 }
 
 - (void)presentMessageComposeViewController:(NSString *)recipient {
@@ -501,8 +515,8 @@ typedef enum {
     
     // Dismiss the current modal view controller and display the compose text one.
     // See previous use for reason why these are not animated.
-    [self dismissViewControllerAnimated:NO completion:nil];
-    [self presentViewController:composeTextViewController animated:NO completion:nil];
+    [self dismissModalViewControllerAnimated:NO];
+    [self presentModalViewController:composeTextViewController animated:NO];
 }
 
 - (void)followUsersTimerFired:(NSTimer *)timer {
